@@ -90,3 +90,36 @@ body {
 .skill-btn:active, .attack-btn:active {
   background: rgba(255, 255, 255, 0.4);
 }
+
+#buff-status {
+  color: #fff;
+  text-align: center;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+/* Mini-map */
+#mini-map {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 80px;
+  height: 80px;
+  border: 2px solid #666;
+  border-radius: 8px;
+  overflow: hidden;
+}
+#mini-map img {
+  width: 100%;
+  height: 100%;
+  opacity: 0.6;
+}
+#mini-fanny {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #00aaff;
+  border-radius: 50%;
+  top: 40px;
+  left: 40px;
+}
