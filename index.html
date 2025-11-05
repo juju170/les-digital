@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fanny Pro AI Simulator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <!-- MAP -->
+    <canvas id="gameMap"></canvas>
+
+    <!-- STATUS BAR -->
+    <div id="status-bar">
+      <div class="hp-bar"><div class="fill" id="hp-fill"></div></div>
+      <div class="energy-bar"><div class="fill" id="energy-fill"></div></div>
+    </div>
+
+    <!-- SKILL BUTTONS -->
+    <div id="controls">
+      <button id="skill1" class="skill-btn">1</button>
+      <button id="skill2" class="skill-btn">2</button>
+      <button id="skill3" class="skill-btn">3</button>
+      <button id="attack" class="attack-btn">⚔️</button>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+  <script src="ai.js"></script>
+</body>
+</html>
