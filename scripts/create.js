@@ -339,6 +339,49 @@ else if (tipe === "urutkanKata") {
   });
 }
 
+  // ====== OPSI TAMBAHAN UNTUK SOAL LOMBA ======
+const lombaBox = document.createElement("div");
+lombaBox.innerHTML = `
+  <hr>
+  <label><input type="checkbox" id="isLomba" /> Jadikan Soal Lomba</label>
+  <div id="lombaOptions" style="display:none; margin-top:8px;">
+    <label>Nama Lencana:</label>
+    <input type="text" id="lencana" placeholder="Misal: Juara Cepat" />
+
+    <label>Waktu Mulai (timestamp):</label>
+    <input type="datetime-local" id="mulaiLomba" />
+
+    <label>Waktu Kadaluarsa (timestamp):</label>
+    <input type="datetime-local" id="kadaluarsaLomba" />
+  </div>
+`;
+document.getElementById("formWadah").appendChild(lombaBox);
+
+const isLomba = lombaBox.querySelector("#isLomba");
+const lombaOptions = lombaBox.querySelector("#lombaOptions");
+
+// Tampilkan opsi lomba saat dicentang
+isLomba.addEventListener("change", () => {
+  lombaOptions.style.display = isLomba.checked ? "block" : "none";
+});
+
+// Modifikasi fungsi simpanSoal agar ikut simpan info lomba
+const oldSimpanSoal = simpanSoal;
+simpanSoal = function (soal) {
+  if (isLomba.checked) {
+    soal.lomba = {
+      aktif: true,
+      lencana: document.getElementById("lencana").value.trim(),
+      mulai: document.getElementById("mulaiLomba").value,
+      kadaluarsa: document.getElementById("kadaluarsaLomba").value,
+    };
+  } else {
+    soal.lomba = { aktif: false };
+  }
+
+  oldSimpanSoal(soal); // jalankan simpan aslinya
+};
+
   // Default pertama
   renderFormPilihanGanda();
   renderSoalList();
