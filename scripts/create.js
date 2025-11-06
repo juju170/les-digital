@@ -222,6 +222,42 @@ else if (tipe === "benarSalah") {
   });
 }
 
+  // ====== TIPE SOAL JAWABAN PER HURUF ======
+else if (tipe === "perHuruf") {
+  const wadah = document.getElementById("formWadah");
+  wadah.innerHTML = `
+    <label>Pertanyaan:</label>
+    <input type="text" id="pertanyaan" placeholder="Misal: Sebuah benda untuk membaca..." />
+
+    <label>Jawaban benar (tanpa spasi):</label>
+    <input type="text" id="jawabanBenar" placeholder="Misal: BUKU" />
+
+    <label>Huruf pengecoh (tambahan):</label>
+    <input type="text" id="hurufPengecoh" placeholder="Misal: XYZ" />
+
+    <button id="saveQuestion">Simpan Soal</button>
+  `;
+
+  document.getElementById("saveQuestion").addEventListener("click", () => {
+    const pertanyaan = document.getElementById("pertanyaan").value.trim();
+    const jawabanBenar = document.getElementById("jawabanBenar").value.trim().toUpperCase();
+    const hurufPengecoh = document.getElementById("hurufPengecoh").value.trim().toUpperCase();
+
+    // Gabungkan semua huruf unik untuk nanti dijadikan tombol
+    const hurufUnik = [...new Set((jawabanBenar + hurufPengecoh).split(""))];
+
+    const soal = {
+      tipe,
+      pertanyaan,
+      jawabanBenar,
+      hurufPengecoh,
+      semuaHuruf: hurufUnik,
+    };
+
+    simpanSoal(soal);
+  });
+}
+
   // Default pertama
   renderFormPilihanGanda();
   renderSoalList();
