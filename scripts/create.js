@@ -144,6 +144,52 @@ document.addEventListener("DOMContentLoaded", () => {
     else if (tipe === "esai") renderFormEsai();
   });
 
+  // ====== TIPE SOAL PENC0C0KKAN ======
+else if (tipe === "pencocokkan") {
+  const wadah = document.getElementById("formWadah");
+  wadah.innerHTML = `
+    <label>Pertanyaan:</label>
+    <input type="text" id="pertanyaan" placeholder="Misal: Cocokkan nama dengan gelar..." />
+
+    <div id="pairList">
+      <div class="pair">
+        <input type="text" placeholder="Kiri (misal: Soekarno)" class="leftVal" />
+        <input type="text" placeholder="Kanan (misal: Ir. Soekarno)" class="rightVal" />
+      </div>
+    </div>
+
+    <button id="addPair">+ Tambah Pasangan</button>
+    <button id="saveQuestion">Simpan Soal</button>
+  `;
+
+  const pairList = document.getElementById("pairList");
+  const addPair = document.getElementById("addPair");
+
+  addPair.addEventListener("click", () => {
+    const div = document.createElement("div");
+    div.className = "pair";
+    div.innerHTML = `
+      <input type="text" placeholder="Kiri (misal: Soekarno)" class="leftVal" />
+      <input type="text" placeholder="Kanan (misal: Ir. Soekarno)" class="rightVal" />
+    `;
+    pairList.appendChild(div);
+  });
+
+  document.getElementById("saveQuestion").addEventListener("click", () => {
+    const pertanyaan = document.getElementById("pertanyaan").value;
+    const kiri = [...document.querySelectorAll(".leftVal")].map((el) => el.value);
+    const kanan = [...document.querySelectorAll(".rightVal")].map((el) => el.value);
+
+    const soal = {
+      tipe,
+      pertanyaan,
+      pasangan: kiri.map((k, i) => ({ kiri: k, kanan: kanan[i] })),
+    };
+
+    simpanSoal(soal);
+  });
+}
+
   // Default pertama
   renderFormPilihanGanda();
   renderSoalList();
