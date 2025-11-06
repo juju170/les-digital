@@ -2,11 +2,42 @@
 document.addEventListener("DOMContentLoaded", () => {
   const tipeSelect = document.getElementById("tipe");
   const formTipeSoal = document.getElementById("formTipeSoal");
-  const simpanBtn = document.getElementById("simpanSoal");
   const daftarSoal = document.getElementById("daftarSoal");
 
   let soalList = JSON.parse(localStorage.getItem("soalList")) || [];
 
+  // --- HELPER: Menampilkan jawaban di daftar soal (FIXED) ---
+  const renderJawaban = (soal) => {
+    switch (soal.tipe) {
+      case "pilihanGanda":
+        return `<ul>${soal.pilihan
+          .map(
+            (p, j) =>
+              `<li style="${soal.jawaban === j ? 'color:green; font-weight:bold;' : ''}">
+                ${String.fromCharCode(65 + j)}. ${p}
+              </li>`
+          )
+          .join("")}</ul>`;
+      case "esai":
+        return `<p><strong>Jawaban Benar:</strong> ${soal.jawaban.join(" / ")}</p>`;
+      case "pencocokkan":
+        return `<ul>${soal.pasangan
+          .map((p) => `<li>${p.kiri} ➔ ${p.kanan}</li>`)
+          .join("")}</ul>`;
+      case "benarSalah":
+        return `<p><strong>Jawaban Benar:</strong> ${soal.jawabanBenar}</p>`;
+      case "perHuruf":
+        return `<p><strong>Jawaban Benar:</strong> ${soal.jawabanBenar}</p>`;
+      case "bersilangan":
+        return `<p><strong>Jawaban:</strong> ${soal.jawabanMenurun} (Menurun), ${soal.jawabanMendatar} (Mendatar)</p>`;
+      case "urutkanKata":
+        return `<p><strong>Jawaban Benar:</strong> ${soal.kalimatBenar}</p>`;
+      default:
+        return "<p><strong>(Tipe soal tidak dikenal)</strong></p>";
+    }
+  };
+
+  // --- HELPER: Merender daftar soal (FIXED) ---
   const renderSoalList = () => {
     if (soalList.length === 0) {
       daftarSoal.innerHTML = "<p>Belum ada soal tersimpan.</p>";
@@ -18,26 +49,72 @@ document.addEventListener("DOMContentLoaded", () => {
         (soal, i) => `
       <div class="soal-item">
         <h3>${i + 1}. (${soal.tipe}) ${soal.pertanyaan}</h3>
-        ${
-          soal.tipe === "pilihanGanda"
-            ? `<ul>${soal.pilihan
-                .map(
-                  (p, j) =>
-                    `<li${soal.jawaban === j ? ' style="color:green;"' : ""}>
-                      ${String.fromCharCode(65 + j)}. ${p}
-                    </li>`
-                )
-                .join("")}</ul>`
-            : `<p><strong>Jawaban Benar:</strong> ${soal.jawaban.join(
-                ", "
-              )}</p>`
-        }
+        ${renderJawaban(soal)}
       </div>`
       )
       .join("");
   };
 
-  // ======== PILIHAN GANDA ========
+  // --- HELPER: HTML Opsi Lomba (Refactored) ---
+  const lombaHtml = `
+    <hr style="margin-top: 20px;">
+    <label><input type="checkbox" id="isLomba" style="width: auto; margin-right: 10px;"/> Jadikan Soal Lomba</label>
+    <div id="lombaOptions" style="display:none; margin-top:8px; padding-left: 20px; border-left: 2px solid #eee;">
+      <label>Nama Lencana:</label>
+      <input type="text" id="lencana" placeholder="Misal: Juara Cepat" />
+      <label>Waktu Mulai:</label>
+      <input type="datetime-local" id="mulaiLomba" />
+      <label>Waktu Kadaluarsa:</label>
+      <input type="datetime-local" id="kadaluarsaLomba" />
+    </div>
+  `;
+
+  // --- HELPER: Memasang listener ke checkbox lomba (Refactored) ---
+  const attachLombaListener = () => {
+    const isLomba = document.getElementById("isLomba");
+    const lombaOptions = document.getElementById("lombaOptions");
+    if (isLomba) {
+      isLomba.addEventListener("change", () => {
+        lombaOptions.style.display = isLomba.checked ? "block" : "none";
+      });
+    }
+  };
+
+  // --- FUNGSI SIMPAN SOAL TERPUSAT (FIXED) ---
+  const simpanSoal = (soal) => {
+    // Cek dan tambahkan data lomba
+    const isLomba = document.getElementById("isLomba");
+    if (isLomba && isLomba.checked) {
+      const lencana = document.getElementById("lencana").value.trim();
+      const mulai = document.getElementById("mulaiLomba").value;
+      const kadaluarsa = document.getElementById("kadaluarsaLomba").value;
+
+      if (!lencana || !mulai || !kadaluarsa) {
+        alert("Untuk soal lomba, semua field (lencana, mulai, kadaluarsa) harus diisi!");
+        return; // Batalkan penyimpanan
+      }
+
+      soal.lomba = {
+        aktif: true,
+        lencana,
+        mulai,
+        kadaluarsa,
+      };
+    } else {
+      soal.lomba = { aktif: false };
+    }
+
+    soalList.push(soal);
+    localStorage.setItem("soalList", JSON.stringify(soalList));
+    alert(`Soal ${soal.tipe} berhasil disimpan!`);
+    renderSoalList();
+    
+    // Reset form dengan memanggil render default
+    renderFormPilihanGanda();
+    tipeSelect.value = "pilihanGanda";
+  };
+
+  // ======== PILIHAN GANDA (Refactored) ========
   const renderFormPilihanGanda = () => {
     formTipeSoal.innerHTML = `
       <label>Pertanyaan:</label>
@@ -48,13 +125,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <label>Jawaban Benar (pilih salah satu)</label>
       <select id="jawabanBenar"></select>
+      
+      ${lombaHtml}
+      <button type="button" id="saveQuestion" class="simpan-btn-tipe">Simpan Soal Pilihan Ganda</button>
     `;
 
     const pilihanWrapper = document.getElementById("pilihanWrapper");
     const tambahBtn = document.getElementById("tambahPilihan");
     const jawabanBenar = document.getElementById("jawabanBenar");
 
-    let pilihan = ["", ""]; // awal minimal 2
+    let pilihan = ["", ""];
 
     const updatePilihanUI = () => {
       pilihanWrapper.innerHTML = "";
@@ -82,28 +162,26 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     updatePilihanUI();
+    attachLombaListener(); // Pasang listener lomba
 
-    simpanBtn.onclick = () => {
+    document.getElementById("saveQuestion").onclick = () => {
       const pertanyaan = document.getElementById("pertanyaan").value.trim();
       const jawaban = parseInt(jawabanBenar.value);
 
       if (!pertanyaan) return alert("Pertanyaan belum diisi!");
       if (pilihan.some((p) => !p)) return alert("Semua pilihan harus diisi!");
 
-      soalList.push({
+      const soal = {
         tipe: "pilihanGanda",
         pertanyaan,
         pilihan,
         jawaban,
-      });
-
-      localStorage.setItem("soalList", JSON.stringify(soalList));
-      alert("Soal pilihan ganda berhasil disimpan!");
-      renderSoalList();
+      };
+      simpanSoal(soal); // Panggil fungsi simpan terpusat
     };
   };
 
-  // ======== ESAI (KECOCOKKAN) ========
+  // ======== ESAI (KECOCOKKAN) (Refactored) ========
   const renderFormEsai = () => {
     formTipeSoal.innerHTML = `
       <label>Pertanyaan:</label>
@@ -111,9 +189,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <label>Jawaban Benar (pisahkan dengan || jika lebih dari satu)</label>
       <textarea id="jawabanEsai" placeholder="contoh: soekarno || ir soekarno"></textarea>
+      
+      ${lombaHtml}
+      <button type="button" id="saveQuestion" class="simpan-btn-tipe">Simpan Soal Esai</button>
     `;
 
-    simpanBtn.onclick = () => {
+    attachLombaListener(); // Pasang listener lomba
+
+    document.getElementById("saveQuestion").onclick = () => {
       const pertanyaan = document.getElementById("pertanyaan").value.trim();
       const jawabanInput = document.getElementById("jawabanEsai").value.trim();
 
@@ -125,264 +208,248 @@ document.addEventListener("DOMContentLoaded", () => {
         .map((j) => j.trim().toLowerCase())
         .filter((j) => j);
 
-      soalList.push({
+      if (jawaban.length === 0) return alert("Jawaban valid belum diisi!");
+
+      const soal = {
         tipe: "esai",
         pertanyaan,
         jawaban,
-      });
-
-      localStorage.setItem("soalList", JSON.stringify(soalList));
-      alert("Soal esai berhasil disimpan!");
-      renderSoalList();
+      };
+      simpanSoal(soal); // Panggil fungsi simpan terpusat
     };
   };
 
-  // ======== EVENT PILIHAN TIPE SOAL ========
+  // ======== PENCOCOKKAN (Refactored) ========
+  const renderFormPencocokkan = () => {
+    formTipeSoal.innerHTML = `
+      <label>Pertanyaan:</label>
+      <input type="text" id="pertanyaan" placeholder="Misal: Cocokkan nama dengan gelar..." />
+
+      <div id="pairList">
+        <div class="pair" style="display: flex; gap: 10px;">
+          <input type="text" placeholder="Kiri (misal: Soekarno)" class="leftVal" />
+          <input type="text" placeholder="Kanan (misal: Ir. Soekarno)" class="rightVal" />
+        </div>
+      </div>
+
+      <button type="button" id="addPair">+ Tambah Pasangan</button>
+      ${lombaHtml}
+      <button type="button" id="saveQuestion" class="simpan-btn-tipe">Simpan Soal Pencocokkan</button>
+    `;
+
+    const pairList = document.getElementById("pairList");
+    const addPair = document.getElementById("addPair");
+
+    addPair.addEventListener("click", () => {
+      const div = document.createElement("div");
+      div.className = "pair";
+      div.style.display = "flex";
+      div.style.gap = "10px";
+      div.innerHTML = `
+        <input type="text" placeholder="Kiri" class="leftVal" />
+        <input type="text" placeholder="Kanan" class="rightVal" />
+      `;
+      pairList.appendChild(div);
+    });
+
+    attachLombaListener();
+
+    document.getElementById("saveQuestion").addEventListener("click", () => {
+      const pertanyaan = document.getElementById("pertanyaan").value.trim();
+      const kiri = [...document.querySelectorAll(".leftVal")].map((el) => el.value.trim());
+      const kanan = [...document.querySelectorAll(".rightVal")].map((el) => el.value.trim());
+
+      if (!pertanyaan) return alert("Pertanyaan belum diisi!");
+      if (kiri.length < 1) return alert("Minimal ada 1 pasangan!");
+      if (kiri.some((k) => !k) || kanan.some((k) => !k)) return alert("Semua pasangan harus diisi!");
+
+      const soal = {
+        tipe: "pencocokkan",
+        pertanyaan,
+        pasangan: kiri.map((k, i) => ({ kiri: k, kanan: kanan[i] })),
+      };
+
+      simpanSoal(soal);
+    });
+  };
+
+  // ======== BENAR SALAH (Refactored) ========
+  const renderFormBenarSalah = () => {
+    formTipeSoal.innerHTML = `
+      <label>Pernyataan:</label>
+      <input type="text" id="pertanyaan" placeholder="Misal: Matahari terbit dari barat" />
+
+      <div>
+        <label>Pilih jawaban benar:</label>
+        <select id="jawabanBenar">
+          <option value="Benar">Benar</option>
+          <option value="Salah">Salah</option>
+        </select>
+      </div>
+
+      ${lombaHtml}
+      <button type="button" id="saveQuestion" class="simpan-btn-tipe">Simpan Soal Benar/Salah</button>
+    `;
+
+    attachLombaListener();
+
+    document.getElementById("saveQuestion").addEventListener("click", () => {
+      const pertanyaan = document.getElementById("pertanyaan").value.trim();
+      if (!pertanyaan) return alert("Pernyataan belum diisi!");
+      
+      const soal = {
+        tipe: "benarSalah",
+        pertanyaan,
+        jawabanBenar: document.getElementById("jawabanBenar").value,
+      };
+
+      simpanSoal(soal);
+    });
+  };
+
+  // ======== JAWABAN PER HURUF (Refactored) ========
+  const renderFormPerHuruf = () => {
+    formTipeSoal.innerHTML = `
+      <label>Pertanyaan:</label>
+      <input type="text" id="pertanyaan" placeholder="Misal: Sebuah benda untuk membaca..." />
+
+      <label>Jawaban benar (tanpa spasi):</label>
+      <input type="text" id="jawabanBenar" placeholder="Misal: BUKU" />
+
+      <label>Huruf pengecoh (tambahan, tanpa spasi):</label>
+      <input type="text" id="hurufPengecoh" placeholder="Misal: XYZ" />
+
+      ${lombaHtml}
+      <button type="button" id="saveQuestion" class="simpan-btn-tipe">Simpan Soal Per Huruf</button>
+    `;
+
+    attachLombaListener();
+
+    document.getElementById("saveQuestion").addEventListener("click", () => {
+      const pertanyaan = document.getElementById("pertanyaan").value.trim();
+      const jawabanBenar = document.getElementById("jawabanBenar").value.trim().toUpperCase().replace(/\s/g, '');
+      const hurufPengecoh = document.getElementById("hurufPengecoh").value.trim().toUpperCase().replace(/\s/g, '');
+
+      if (!pertanyaan) return alert("Pertanyaan belum diisi!");
+      if (!jawabanBenar) return alert("Jawaban benar belum diisi!");
+
+      const hurufUnik = [...new Set((jawabanBenar + hurufPengecoh).split(""))];
+
+      const soal = {
+        tipe: "perHuruf",
+        pertanyaan,
+        jawabanBenar,
+        hurufPengecoh,
+        semuaHuruf: hurufUnik.sort(() => Math.random() - 0.5), // Acak huruf
+      };
+
+      simpanSoal(soal);
+    });
+  };
+
+  // ======== BERSILANGAN (Refactored) ========
+  const renderFormBersilangan = () => {
+    formTipeSoal.innerHTML = `
+      <p>Minimal dua kata, dan harus ada satu huruf yang sama untuk menyilangkan.</p>
+      <label>Pertanyaan Menurun:</label>
+      <input type="text" id="pertanyaanMenurun" placeholder="Misal: Ibu kota Indonesia" />
+      <input type="text" id="jawabanMenurun" placeholder="Misal: JAKARTA" />
+
+      <label>Pertanyaan Mendatar:</label>
+      <input type="text" id="pertanyaanMendatar" placeholder="Misal: Nama pulau terbesar di Indonesia" />
+      <input type="text" id="jawabanMendatar" placeholder="Misal: KALIMANTAN" />
+
+      ${lombaHtml}
+      <button type="button" id="saveQuestion" class="simpan-btn-tipe">Simpan Soal Bersilangan</button>
+    `;
+
+    attachLombaListener();
+
+    document.getElementById("saveQuestion").addEventListener("click", () => {
+      const pertanyaanMenurun = document.getElementById("pertanyaanMenurun").value.trim();
+      const jawabanMenurun = document.getElementById("jawabanMenurun").value.trim().toUpperCase().replace(/\s/g, '');
+      const pertanyaanMendatar = document.getElementById("pertanyaanMendatar").value.trim();
+      const jawabanMendatar = document.getElementById("jawabanMendatar").value.trim().toUpperCase().replace(/\s/g, '');
+
+      if (!pertanyaanMenurun || !jawabanMenurun || !pertanyaanMendatar || !jawabanMendatar) {
+        return alert("Semua field harus diisi!");
+      }
+
+      const hurufSama = [...jawabanMenurun].find((h) => jawabanMendatar.includes(h));
+
+      if (!hurufSama) {
+        alert("Harus ada minimal satu huruf yang sama antara jawaban menurun dan mendatar!");
+        return;
+      }
+
+      const soal = {
+        tipe: "bersilangan",
+        pertanyaanMenurun,
+        jawabanMenurun,
+        pertanyaanMendatar,
+        jawabanMendatar,
+        hurufSilang: hurufSama,
+      };
+
+      simpanSoal(soal);
+    });
+  };
+
+  // ======== URUTKAN KATA (Refactored) ========
+  const renderFormUrutkanKata = () => {
+    formTipeSoal.innerHTML = `
+      <label>Pertanyaan:</label>
+      <input type="text" id="pertanyaan" placeholder="Misal: Susunlah kata berikut menjadi kalimat yang benar" />
+
+      <label>Kalimat benar:</label>
+      <input type="text" id="kalimatBenar" placeholder="Misal: Saya suka makan nasi goreng" />
+
+      ${lombaHtml}
+      <button type="button" id="saveQuestion" class="simpan-btn-tipe">Simpan Soal Urutkan Kata</button>
+    `;
+
+    attachLombaListener();
+
+    document.getElementById("saveQuestion").addEventListener("click", () => {
+      const pertanyaan = document.getElementById("pertanyaan").value.trim();
+      const kalimatBenar = document.getElementById("kalimatBenar").value.trim();
+
+      if (!pertanyaan) return alert("Pertanyaan belum diisi!");
+      if (!kalimatBenar) return alert("Kalimat benar belum diisi!");
+
+      if (!kalimatBenar.includes(" ")) {
+        alert("Kalimat harus terdiri dari beberapa kata agar bisa diacak!");
+        return;
+      }
+
+      const kataArray = kalimatBenar.split(" ");
+      const kataAcak = [...kataArray].sort(() => Math.random() - 0.5);
+
+      const soal = {
+        tipe: "urutkanKata",
+        pertanyaan,
+        kalimatBenar,
+        kataAcak,
+      };
+
+      simpanSoal(soal);
+    });
+  };
+
+  // ======== EVENT PILIHAN TIPE SOAL (FIXED) ========
   tipeSelect.addEventListener("change", (e) => {
     const tipe = e.target.value;
     if (tipe === "pilihanGanda") renderFormPilihanGanda();
     else if (tipe === "esai") renderFormEsai();
+    else if (tipe === "pencocokkan") renderFormPencocokkan();
+    else if (tipe === "benarSalah") renderFormBenarSalah();
+    else if (tipe === "perHuruf") renderFormPerHuruf();
+    else if (tipe === "bersilangan") renderFormBersilangan();
+    else if (tipe === "urutkanKata") renderFormUrutkanKata();
   });
 
-  // ====== TIPE SOAL PENC0C0KKAN ======
-else if (tipe === "pencocokkan") {
-  const wadah = document.getElementById("formWadah");
-  wadah.innerHTML = `
-    <label>Pertanyaan:</label>
-    <input type="text" id="pertanyaan" placeholder="Misal: Cocokkan nama dengan gelar..." />
-
-    <div id="pairList">
-      <div class="pair">
-        <input type="text" placeholder="Kiri (misal: Soekarno)" class="leftVal" />
-        <input type="text" placeholder="Kanan (misal: Ir. Soekarno)" class="rightVal" />
-      </div>
-    </div>
-
-    <button id="addPair">+ Tambah Pasangan</button>
-    <button id="saveQuestion">Simpan Soal</button>
-  `;
-
-  const pairList = document.getElementById("pairList");
-  const addPair = document.getElementById("addPair");
-
-  addPair.addEventListener("click", () => {
-    const div = document.createElement("div");
-    div.className = "pair";
-    div.innerHTML = `
-      <input type="text" placeholder="Kiri (misal: Soekarno)" class="leftVal" />
-      <input type="text" placeholder="Kanan (misal: Ir. Soekarno)" class="rightVal" />
-    `;
-    pairList.appendChild(div);
-  });
-
-  document.getElementById("saveQuestion").addEventListener("click", () => {
-    const pertanyaan = document.getElementById("pertanyaan").value;
-    const kiri = [...document.querySelectorAll(".leftVal")].map((el) => el.value);
-    const kanan = [...document.querySelectorAll(".rightVal")].map((el) => el.value);
-
-    const soal = {
-      tipe,
-      pertanyaan,
-      pasangan: kiri.map((k, i) => ({ kiri: k, kanan: kanan[i] })),
-    };
-
-    simpanSoal(soal);
-  });
-}
-
-  // ====== TIPE SOAL BENAR / SALAH ======
-else if (tipe === "benarSalah") {
-  const wadah = document.getElementById("formWadah");
-  wadah.innerHTML = `
-    <label>Pernyataan:</label>
-    <input type="text" id="pertanyaan" placeholder="Misal: Matahari terbit dari barat" />
-
-    <div>
-      <label>Pilih jawaban benar:</label>
-      <select id="jawabanBenar">
-        <option value="Benar">Benar</option>
-        <option value="Salah">Salah</option>
-      </select>
-    </div>
-
-    <button id="saveQuestion">Simpan Soal</button>
-  `;
-
-  document.getElementById("saveQuestion").addEventListener("click", () => {
-    const pertanyaan = document.getElementById("pertanyaan").value;
-    const jawabanBenar = document.getElementById("jawabanBenar").value;
-
-    const soal = {
-      tipe,
-      pertanyaan,
-      jawabanBenar,
-    };
-
-    simpanSoal(soal);
-  });
-}
-
-  // ====== TIPE SOAL JAWABAN PER HURUF ======
-else if (tipe === "perHuruf") {
-  const wadah = document.getElementById("formWadah");
-  wadah.innerHTML = `
-    <label>Pertanyaan:</label>
-    <input type="text" id="pertanyaan" placeholder="Misal: Sebuah benda untuk membaca..." />
-
-    <label>Jawaban benar (tanpa spasi):</label>
-    <input type="text" id="jawabanBenar" placeholder="Misal: BUKU" />
-
-    <label>Huruf pengecoh (tambahan):</label>
-    <input type="text" id="hurufPengecoh" placeholder="Misal: XYZ" />
-
-    <button id="saveQuestion">Simpan Soal</button>
-  `;
-
-  document.getElementById("saveQuestion").addEventListener("click", () => {
-    const pertanyaan = document.getElementById("pertanyaan").value.trim();
-    const jawabanBenar = document.getElementById("jawabanBenar").value.trim().toUpperCase();
-    const hurufPengecoh = document.getElementById("hurufPengecoh").value.trim().toUpperCase();
-
-    // Gabungkan semua huruf unik untuk nanti dijadikan tombol
-    const hurufUnik = [...new Set((jawabanBenar + hurufPengecoh).split(""))];
-
-    const soal = {
-      tipe,
-      pertanyaan,
-      jawabanBenar,
-      hurufPengecoh,
-      semuaHuruf: hurufUnik,
-    };
-
-    simpanSoal(soal);
-  });
-}
-
-  // ====== TIPE SOAL BERSILANGAN (MENURUN & MENDATAR) ======
-else if (tipe === "bersilangan") {
-  const wadah = document.getElementById("formWadah");
-  wadah.innerHTML = `
-    <p>Minimal dua kata, dan harus ada satu huruf yang sama untuk menyilangkan.</p>
-    <label>Pertanyaan Menurun:</label>
-    <input type="text" id="pertanyaanMenurun" placeholder="Misal: Ibu kota Indonesia" />
-    <input type="text" id="jawabanMenurun" placeholder="Misal: JAKARTA" />
-
-    <label>Pertanyaan Mendatar:</label>
-    <input type="text" id="pertanyaanMendatar" placeholder="Misal: Nama pulau terbesar di Indonesia" />
-    <input type="text" id="jawabanMendatar" placeholder="Misal: KALIMANTAN" />
-
-    <button id="saveQuestion">Simpan Soal</button>
-  `;
-
-  document.getElementById("saveQuestion").addEventListener("click", () => {
-    const pertanyaanMenurun = document.getElementById("pertanyaanMenurun").value.trim();
-    const jawabanMenurun = document.getElementById("jawabanMenurun").value.trim().toUpperCase();
-    const pertanyaanMendatar = document.getElementById("pertanyaanMendatar").value.trim();
-    const jawabanMendatar = document.getElementById("jawabanMendatar").value.trim().toUpperCase();
-
-    // Cek apakah ada huruf yang sama untuk disilangkan
-    const hurufSama = [...jawabanMenurun].find((h) => jawabanMendatar.includes(h));
-
-    if (!hurufSama) {
-      alert("Harus ada minimal satu huruf yang sama antara jawaban menurun dan mendatar!");
-      return;
-    }
-
-    const soal = {
-      tipe,
-      pertanyaanMenurun,
-      jawabanMenurun,
-      pertanyaanMendatar,
-      jawabanMendatar,
-      hurufSilang: hurufSama,
-    };
-
-    simpanSoal(soal);
-  });
-}
-
-  // ====== TIPE SOAL URUTKAN KATA ======
-else if (tipe === "urutkanKata") {
-  const wadah = document.getElementById("formWadah");
-  wadah.innerHTML = `
-    <label>Pertanyaan:</label>
-    <input type="text" id="pertanyaan" placeholder="Misal: Susunlah kata berikut menjadi kalimat yang benar" />
-
-    <label>Kalimat benar:</label>
-    <input type="text" id="kalimatBenar" placeholder="Misal: Saya suka makan nasi goreng" />
-
-    <button id="saveQuestion">Simpan Soal</button>
-  `;
-
-  document.getElementById("saveQuestion").addEventListener("click", () => {
-    const pertanyaan = document.getElementById("pertanyaan").value.trim();
-    const kalimatBenar = document.getElementById("kalimatBenar").value.trim();
-
-    if (!kalimatBenar.includes(" ")) {
-      alert("Kalimat harus terdiri dari beberapa kata agar bisa diacak!");
-      return;
-    }
-
-    // Pisah kata menjadi array
-    const kataArray = kalimatBenar.split(" ");
-    // Acak susunannya
-    const kataAcak = [...kataArray].sort(() => Math.random() - 0.5);
-
-    const soal = {
-      tipe,
-      pertanyaan,
-      kalimatBenar,
-      kataAcak,
-    };
-
-    simpanSoal(soal);
-  });
-}
-
-  // ====== OPSI TAMBAHAN UNTUK SOAL LOMBA ======
-const lombaBox = document.createElement("div");
-lombaBox.innerHTML = `
-  <hr>
-  <label><input type="checkbox" id="isLomba" /> Jadikan Soal Lomba</label>
-  <div id="lombaOptions" style="display:none; margin-top:8px;">
-    <label>Nama Lencana:</label>
-    <input type="text" id="lencana" placeholder="Misal: Juara Cepat" />
-
-    <label>Waktu Mulai (timestamp):</label>
-    <input type="datetime-local" id="mulaiLomba" />
-
-    <label>Waktu Kadaluarsa (timestamp):</label>
-    <input type="datetime-local" id="kadaluarsaLomba" />
-  </div>
-`;
-document.getElementById("formWadah").appendChild(lombaBox);
-
-const isLomba = lombaBox.querySelector("#isLomba");
-const lombaOptions = lombaBox.querySelector("#lombaOptions");
-
-// Tampilkan opsi lomba saat dicentang
-isLomba.addEventListener("change", () => {
-  lombaOptions.style.display = isLomba.checked ? "block" : "none";
-});
-
-// Modifikasi fungsi simpanSoal agar ikut simpan info lomba
-const oldSimpanSoal = simpanSoal;
-simpanSoal = function (soal) {
-  if (isLomba.checked) {
-    soal.lomba = {
-      aktif: true,
-      lencana: document.getElementById("lencana").value.trim(),
-      mulai: document.getElementById("mulaiLomba").value,
-      kadaluarsa: document.getElementById("kadaluarsaLomba").value,
-    };
-  } else {
-    soal.lomba = { aktif: false };
-  }
-
-  oldSimpanSoal(soal); // jalankan simpan aslinya
-};
-
-  // Default pertama
+  // Default pertama kali dimuat
   renderFormPilihanGanda();
   renderSoalList();
 });
+
