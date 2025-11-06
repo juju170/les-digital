@@ -258,6 +258,49 @@ else if (tipe === "perHuruf") {
   });
 }
 
+  // ====== TIPE SOAL BERSILANGAN (MENURUN & MENDATAR) ======
+else if (tipe === "bersilangan") {
+  const wadah = document.getElementById("formWadah");
+  wadah.innerHTML = `
+    <p>Minimal dua kata, dan harus ada satu huruf yang sama untuk menyilangkan.</p>
+    <label>Pertanyaan Menurun:</label>
+    <input type="text" id="pertanyaanMenurun" placeholder="Misal: Ibu kota Indonesia" />
+    <input type="text" id="jawabanMenurun" placeholder="Misal: JAKARTA" />
+
+    <label>Pertanyaan Mendatar:</label>
+    <input type="text" id="pertanyaanMendatar" placeholder="Misal: Nama pulau terbesar di Indonesia" />
+    <input type="text" id="jawabanMendatar" placeholder="Misal: KALIMANTAN" />
+
+    <button id="saveQuestion">Simpan Soal</button>
+  `;
+
+  document.getElementById("saveQuestion").addEventListener("click", () => {
+    const pertanyaanMenurun = document.getElementById("pertanyaanMenurun").value.trim();
+    const jawabanMenurun = document.getElementById("jawabanMenurun").value.trim().toUpperCase();
+    const pertanyaanMendatar = document.getElementById("pertanyaanMendatar").value.trim();
+    const jawabanMendatar = document.getElementById("jawabanMendatar").value.trim().toUpperCase();
+
+    // Cek apakah ada huruf yang sama untuk disilangkan
+    const hurufSama = [...jawabanMenurun].find((h) => jawabanMendatar.includes(h));
+
+    if (!hurufSama) {
+      alert("Harus ada minimal satu huruf yang sama antara jawaban menurun dan mendatar!");
+      return;
+    }
+
+    const soal = {
+      tipe,
+      pertanyaanMenurun,
+      jawabanMenurun,
+      pertanyaanMendatar,
+      jawabanMendatar,
+      hurufSilang: hurufSama,
+    };
+
+    simpanSoal(soal);
+  });
+}
+
   // Default pertama
   renderFormPilihanGanda();
   renderSoalList();
