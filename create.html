@@ -4,7 +4,73 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Buat Soal - Les Simple</title>
-  <link rel="stylesheet" href="style.css" />
+  <!-- Ganti 'style.css' dengan path yang benar jika diperlukan -->
+  <!-- <link rel="stylesheet" href="style.css" /> -->
+  <style>
+    /* Menambahkan beberapa style dasar agar terlihat rapi */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    header, main {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    header h1 {
+      text-align: center;
+      color: #333;
+    }
+    section {
+      background-color: #fff;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    label, input, textarea, select, button {
+      display: block;
+      width: 100%;
+      margin-bottom: 12px;
+      box-sizing: border-box; /* Memastikan padding tidak merusak layout */
+    }
+    input[type="text"], input[type="datetime-local"], textarea, select {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button, .simpan-btn-tipe {
+      background-color: #007bff;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover, .simpan-btn-tipe:hover {
+      background-color: #0056b3;
+    }
+    /* Tombol untuk tambah pilihan/pasangan */
+    #tambahPilihan, #addPair {
+      background-color: #28a745;
+      width: auto; /* Tombol tambah tidak perlu full-width */
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+    .soal-item {
+      border-bottom: 1px solid #eee;
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+    }
+    .soal-item h3 {
+      color: #555;
+    }
+    .soal-item li {
+      margin-bottom: 5px;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -15,18 +81,20 @@
     <section id="formSoal">
       <label for="tipe">Tipe Soal</label>
       <select id="tipe">
-  <option value="pilihanGanda">Pilihan Ganda</option>
-  <option value="esai">Essai (Kecocokkan)</option>
-  <option value="pencocokkan">Pencocokkan</option>
-  <option value="benarSalah">Benar atau Salah</option>
-  <option value="perHuruf">Jawaban Per Huruf</option>
-  <option value="bersilangan">Jawaban Bersilangan</option>
-  <option value="urutkanKata">Urutkan Kata</option>
+        <option value="pilihanGanda">Pilihan Ganda</option>
+        <option value="esai">Essai (Kecocokkan)</option>
+        <option value="pencocokkan">Pencocokkan</option>
+        <option value="benarSalah">Benar atau Salah</option>
+        <option value="perHuruf">Jawaban Per Huruf</option>
+        <option value="bersilangan">Jawaban Bersilangan</option>
+        <option value="urutkanKata">Urutkan Kata</option>
       </select>
 
+      <!-- Form dinamis akan dimasukkan di sini oleh JavaScript -->
       <div id="formTipeSoal"></div>
 
-      <button id="simpanSoal">Simpan Soal</button>
+      <!-- Tombol simpan utama telah dihapus, 
+           karena setiap form akan memiliki tombol simpannya sendiri -->
     </section>
 
     <section id="listSoal">
@@ -35,7 +103,11 @@
     </section>
   </main>
 
-  <script src="config/firebase-config.js"></script>
-  <script src="scripts/create.js"></script>
+  <!-- Jika Anda menggunakan Firebase, pastikan path ini benar -->
+  <!-- <script src="config/firebase-config.js"></script> -->
+  
+  <!-- Path ke file JS yang diperbaiki -->
+  <script src="create.js"></script>
 </body>
 </html>
+
