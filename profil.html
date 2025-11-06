@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profil - Les Simple</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Profil Pengguna</h1>
+  </header>
+
+  <main>
+    <!-- Tampilan untuk murid -->
+    <section id="muridProfile" style="display:none;">
+      <h2>Profil Saya</h2>
+      <p><strong>Email:</strong> <span id="muridEmail"></span></p>
+      <p><strong>Kelas:</strong> <span id="muridKelas"></span></p>
+      <p><strong>Poin:</strong> <span id="muridPoin">0</span></p>
+
+      <h3>Lencana Saya</h3>
+      <ul id="muridLencana"></ul>
+    </section>
+
+    <!-- Tampilan untuk admin -->
+    <section id="adminPanel" style="display:none;">
+      <h2>Panel Admin</h2>
+      <div id="daftarMurid">Memuat data murid...</div>
+    </section>
+
+    <button id="logoutBtn">Keluar</button>
+  </main>
+
+  <script src="config/firebase-config.js"></script>
+  <script src="scripts/profile.js"></script>
+</body>
+</html>
